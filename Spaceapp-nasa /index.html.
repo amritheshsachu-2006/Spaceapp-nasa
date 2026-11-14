@@ -1,0 +1,375 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLOXELL SI – Flame in Freefall | NASA Space Apps Challenge 2026</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Space Grotesk, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Chart.js for Scientific Telemetry -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            void: '#0b051d',
+            nebula: '#13092e',
+            panel: '#1a0e3d',
+            panelLight: '#241452',
+            cyanGlow: '#00f0ff',
+            violetGlow: '#8b5cf6',
+            pinkGlow: '#ec4899',
+            orangeGlow: '#f97316',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #0b051d;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    /* Animated Starfield & Orbital Background */
+    .space-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.22) 0%, transparent 42%),
+        radial-gradient(circle at 85% 15%, rgba(0, 240, 255, 0.14) 0%, transparent 38%),
+        radial-gradient(circle at 75% 82%, rgba(236, 72, 153, 0.16) 0%, transparent 45%),
+        radial-gradient(circle at 20% 85%, rgba(249, 115, 22, 0.12) 0%, transparent 40%),
+        linear-gradient(180deg, #0b051d 0%, #13092e 55%, #090417 100%);
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.25; transform: scale(0.9); }
+      50% { opacity: 0.95; transform: scale(1.15); }
+    }
+
+    @keyframes slowOrbit {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes reverseOrbit {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    @keyframes floatPlanet {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .orbit-spin {
+      animation: slowOrbit 42s linear infinite;
+      transform-origin: center;
+    }
+
+    .orbit-spin-fast {
+      animation: reverseOrbit 24s linear infinite;
+      transform-origin: center;
+    }
+
+    .planet-float {
+      animation: floatPlanet 7s ease-in-out infinite;
+    }
+
+    .glass-card {
+      background: rgba(26, 14, 61, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      box-shadow: 0 10px 30px rgba(5, 2, 18, 0.55);
+    }
+
+    .glass-card-hover {
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .glass-card-hover:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 240, 255, 0.55);
+      box-shadow: 0 14px 34px rgba(0, 240, 255, 0.12);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b051d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3b217a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #8b5cf6;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-cyanGlow selection:text-void">
+
+  <!-- Deep Space Animated Backdrop -->
+  <div class="space-canvas" aria-hidden="true">
+    <div id="starfield-layer" class="absolute inset-0"></div>
+    <!-- Decorative Orbital Rings & Floating Exoplanet SVG -->
+    <svg class="absolute -top-24 -right-24 w-[460px] h-[460px] opacity-35" viewBox="0 0 400 400" fill="none">
+      <circle cx="200" cy="200" r="170" stroke="url(#orbGrad1)" stroke-width="1.2" stroke-dasharray="6 8" class="orbit-spin" />
+      <circle cx="200" cy="200" r="125" stroke="url(#orbGrad2)" stroke-width="1" stroke-dasharray="3 6" class="orbit-spin-fast" />
+      <g class="planet-float">
+        <circle cx="200" cy="200" r="44" fill="url(#planetGrad)" />
+        <ellipse cx="200" cy="200" rx="76" ry="18" transform="rotate(-18 200 200)" stroke="#00f0ff" stroke-width="1.8" stroke-opacity="0.7" />
+      </g>
+      <defs>
+        <linearGradient id="orbGrad1" x1="0" y1="0" x2="400" y2="400">
+          <stop offset="0%" stop-color="#00f0ff" />
+          <stop offset="50%" stop-color="#8b5cf6" />
+          <stop offset="100%" stop-color="#ec4899" />
+        </linearGradient>
+        <linearGradient id="orbGrad2" x1="400" y1="0" x2="0" y2="400">
+          <stop offset="0%" stop-color="#f97316" />
+          <stop offset="100%" stop-color="#00f0ff" />
+        </linearGradient>
+        <radialGradient id="planetGrad" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#c084fc" />
+          <stop offset="55%" stop-color="#6d28d9" />
+          <stop offset="100%" stop-color="#1e1042" />
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Toast / Status Notification Banner (Replaces alert) -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 hidden max-w-md glass-card border-cyanGlow/60 rounded-xl px-4 py-3 text-sm text-white shadow-2xl transition-all">
+    <div class="flex items-start gap-3">
+      <i id="toast-icon" class="fa-solid fa-circle-info text-cyanGlow mt-0.5"></i>
+      <div class="flex-1">
+        <p id="toast-title" class="font-semibold text-white">System Telemetry</p>
+        <p id="toast-message" class="text-xs text-slate-300 mt-0.5"></p>
+      </div>
+      <button onclick="hideToast()" class="text-slate-400 hover:text-white p-1" aria-label="Dismiss notification">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Shell -->
+  <div class="relative z-10 min-h-screen flex flex-col">
+
+    <!-- Top NASA Space Apps Public Access & Telemetry Bar -->
+    <div class="bg-gradient-to-r from-violet-950/90 via-indigo-950/90 to-fuchsia-950/90 border-b border-violet-500/30 px-4 py-2 text-xs">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-mono font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Guest Judge / Public Access Mode (Active — No Login Required)
+          </span>
+          <span class="hidden md:inline text-slate-300">
+            NASA Space Apps Challenge 2026 · Team <strong class="text-cyanGlow">LLOXELL</strong>
+          </span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-300 font-mono">
+          <span class="hidden sm:inline"><i class="fa-solid fa-database text-violetGlow mr-1"></i>PSI &amp; NTRS Grounded</span>
+          <span class="text-orangeGlow"><i class="fa-solid fa-shield-halved mr-1"></i>Zero Unverified AI Claims</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Primary Navigation Header -->
+    <header class="sticky top-0 z-30 bg-[#0b051d]/85 backdrop-blur-xl border-b border-violet-500/25">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+        <!-- Brand & Custom LLOXELL SVG Logo -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchSection('dashboard')">
+          <div class="relative w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600/30 to-cyan-500/20 border border-cyanGlow/40 flex items-center justify-center shadow-lg">
+            <svg class="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="32" cy="32" rx="26" ry="11" transform="rotate(-28 32 32)" stroke="#00f0ff" stroke-width="2.2" />
+              <ellipse cx="32" cy="32" rx="26" ry="11" transform="rotate(28 32 32)" stroke="#ec4899" stroke-width="2.2" />
+              <!-- Microgravity Spherical Flame Core -->
+              <circle cx="32" cy="32" r="10" fill="url(#flameCore)" />
+              <circle cx="32" cy="33" r="4.5" fill="#ffffff" />
+              <defs>
+                <radialGradient id="flameCore" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#00f0ff" />
+                  <stop offset="65%" stop-color="#f97316" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </radialGradient>
+              </defs>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold text-lg sm:text-xl tracking-tight text-white">LLOXELL <span class="text-cyanGlow">SI</span></span>
+              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-violet-500/25 text-violet-200 border border-violet-400/30">v2026.4</span>
+            </div>
+            <p class="text-xs text-slate-300 line-clamp-1">Flame in Freefall: Microgravity Combustion Insights</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-full py-1" aria-label="Main navigation">
+          <button onclick="switchSection('dashboard')" data-nav="dashboard" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-violet-600/35 text-cyanGlow border border-cyanGlow/40 whitespace-nowrap">
+            <i class="fa-solid fa-chart-line mr-1.5"></i>Dashboard
+          </button>
+          <button onclick="switchSection('explorer')" data-nav="explorer" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-transparent whitespace-nowrap">
+            <i class="fa-solid fa-magnifying-glass mr-1.5"></i>Explorer
+          </button>
+          <button onclick="switchSection('compare')" data-nav="compare" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-transparent whitespace-nowrap">
+            <i class="fa-solid fa-code-compare mr-1.5"></i>Compare (<span id="compare-count-badge">3</span>)
+          </button>
+          <button onclick="switchSection('assistant')" data-nav="assistant" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-transparent whitespace-nowrap">
+            <i class="fa-solid fa-robot mr-1.5 text-pinkGlow"></i>SI Assistant
+          </button>
+          <button onclick="switchSection('safety')" data-nav="safety" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-transparent whitespace-nowrap">
+            <i class="fa-solid fa-fire-extinguisher mr-1.5 text-orangeGlow"></i>Fire Safety
+          </button>
+        </nav>
+
+        <!-- Researcher Login / Account Button -->
+        <div class="flex items-center gap-2">
+          <button id="auth-status-btn" onclick="openLoginModal()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white shadow-lg shadow-violet-900/40 transition-all flex items-center gap-2">
+            <i class="fa-solid fa-user-astronaut"></i>
+            <span id="auth-btn-label">Researcher Portal</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
+
+      <!-- ========================================================= -->
+      <!-- SECTION 1: MAIN DASHBOARD & EXPERIMENT OVERVIEW           -->
+      <!-- ========================================================= -->
+      <section id="section-dashboard" class="app-section space-y-6">
+        <!-- Hero Telemetry Header -->
+        <div class="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-3 max-w-3xl">
+              <div class="inline-flex flex-wrap items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-cyanGlow/15 text-cyanGlow border border-cyanGlow/35">
+                  NASA SPACE APPS CHALLENGE 2026
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-mono bg-orangeGlow/15 text-orangeGlow border border-orangeGlow/35">
+                  TEAM LLOXELL · KERALA, INDIA
+                </span>
+              </div>
+              <h1 class="font-display text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
+                Flame in Freefall: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanGlow via-violet-300 to-pinkGlow">SI-Powered Fire Safety Insights</span> from Microgravity Combustion Data
+              </h1>
+              <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                Transforming decades of NASA Physical Sciences Informatics (PSI) orbital flame records—spanning <strong class="text-white">Saffire, FLEX, BASS, SoFIE, and ACME</strong>—into traceable, hallucination-guarded spacecraft fire prevention, detection, response, and suppression protocols.
+              </p>
+              <div class="flex flex-wrap items-center gap-3 pt-1">
+                <button onclick="switchSection('explorer')" class="px-4 py-2.5 rounded-xl bg-cyanGlow text-void font-semibold text-sm hover:bg-cyan-300 transition-all shadow-lg shadow-cyanGlow/20">
+                  <i class="fa-solid fa-compass mr-1.5"></i>Explore NASA Records
+                </button>
+                <button onclick="switchSection('assistant')" class="px-4 py-2.5 rounded-xl bg-panelLight border border-violet-400/40 text-white font-semibold text-sm hover:border-pinkGlow transition-all">
+                  <i class="fa-solid fa-sparkles mr-1.5 text-pinkGlow"></i>Query SI Research Assistant
+                </button>
+                <button onclick="openLoginModal()" class="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-slate-200 font-medium text-sm hover:bg-white/10 transition-all">
+                  <i class="fa-solid fa-id-badge mr-1.5 text-violet-300"></i>Inspect Login Portal UI
+                </button>
+              </div>
+            </div>
+
+            <!-- Team & Architecture Badge Card -->
+            <div class="lg:w-80 bg-[#12082b]/90 border border-violet-500/35 rounded-2xl p-4 space-y-3 shrink-0">
+              <div class="flex items-center justify-between border-b border-violet-500/20 pb-2.5">
+                <span class="text-xs font-mono uppercase text-cyanGlow font-semibold">Mission Flight Crew</span>
+                <span class="text-xs font-mono text-slate-400">LLOXELL-01</span>
+              </div>
+              <ul class="space-y-2 text-sm">
+                <li class="flex items-center justify-between">
+                  <span class="text-white font-medium"><i class="fa-solid fa-user-astronaut text-cyanGlow mr-2"></i>Abhi S Aji</span>
+                  <span class="text-[11px] font-mono text-slate-400">Systems &amp; SI</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span class="text-white font-medium"><i class="fa-solid fa-user-astronaut text-violetGlow mr-2"></i>Amrithesh S R</span>
+                  <span class="text-[11px] font-mono text-slate-400">Combustion Data</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span class="text-white font-medium"><i class="fa-solid fa-user-astronaut text-pinkGlow mr-2"></i>Ashish Biju</span>
+                  <span class="text-[11px] font-mono text-slate-400">Full-Stack UI</span>
+                </li>
+              </ul>
+              <div class="pt-2 border-t border-violet-500/20 text-[11px] font-mono text-slate-300 flex items-center justify-between">
+                <span>Stack: FastAPI · SQLite · SI</span>
+                <span class="text-emerald-400">● Online</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 KPI Telemetry Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-card glass-card-hover rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase text-slate-400">NASA Investigations</span>
+              <span class="w-9 h-9 rounded-xl bg-cyanGlow/15 text-cyanGlow flex items-center justify-center">
+                <i class="fa-solid fa-satellite"></i>
+              </span>
+            </div>
+            <p class="font-display text-3xl font-bold text-white mt-2">12 <span class="text-sm font-normal text-cyanGlow">Campaigns</span></p>
+            <p class="text-xs text-slate-300 mt-1">10 Verified NASA Flight + 2 Labeled Benchmarks</p>
+          </div>
+
+          <div class="glass-card glass-card-hover rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase text-slate-400">Orbital Facilities</span>
+              <span class="w-9 h-9 rounded-xl bg-violetGlow/20 text-violet-300 flex items-center justify-center">
+                <i class="fa-solid fa-shuttle-space"></i>
+              </span>
+            </div>
+            <p class="font-display text-3xl font-bold text-white mt-2">4 <span class="text-sm font-normal text-violet-300">Testbeds</span></p>
+            <p class="text-xs text-slate-300 mt-1">ISS CIR, ISS MSG, Cygnus Module, Glenn Tower</p>
+          </div>
+
+          <div class="glass-card glass-card-hover rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase text-slate-400">Flame Regimes</span>
+              <span class="w-9 h-9 rounded-xl bg-orangeGlow/20 text-orangeGlow flex items-center justify-center">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+              </span>
+            </div>
+            <p class="font-display text-3xl font-bold text-white mt-2">3 <span class="text-sm font-normal text-orangeGlow">Modes</span></p>
+            <p class="text-xs text-slate-300 mt-1">Hot Sooty, Spherical Diffusion &amp; Cool Flames</p>
+          </div>
+
+          <div class="glass-card glass-card-hover rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase text-slate-400">Traceable Insights</span>
+              <span class="w-9 h-9 rounded-xl bg-pinkGlow/20 text-pinkGlow flex items-center justify-center">
+                <i class="fa-solid fa-file-shield"></i>
+              </span>
+            </div>
+            <p class="font-display text-3xl font-bold text-white mt-2">100% <span class="text-sm font-normal text-pinkGlow">Cited</span></p>
+            <p class="text-xs text-slate-300 mt-1">Mapped to NASA NTRS &amp; ISS Explorer IDs</p>
+          </div>
+        </div>
+
+        <!-- Data Visualization Charts Row -->
+        <div
